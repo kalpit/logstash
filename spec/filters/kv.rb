@@ -320,4 +320,28 @@ describe LogStash::Filters::KV do
     end
   end
 
+  describe "test data type inference for values" do
+    # The logstash config goes here.
+    # At this time, only filters are supported.
+    config <<-CONFIG
+      filter {
+        kv {
+          value_string => [ "c","d" ]
+        }
+      }
+    CONFIG
+
+    sample "hello=world doublequoted=\"hello world\" singlequoted='hello world' a=42 b=42.42 c=42 d=42.42" do
+      insist { subject["hello"] } == "world"
+      insist { subject["doublequoted"] } == "hello world"
+      insist { subject["singlequoted"] } == "hello world"
+      insist { subject["a"] } == 42
+      insist { subject["b"] } == 42.42
+      insist { subject["c"] } == "42"
+      insist { subject["d"] } == "42.42"
+      insist {subject['@fields'].count } == 7
+    end
+
+  end
+
 end

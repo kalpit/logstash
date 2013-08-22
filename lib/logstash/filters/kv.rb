@@ -103,6 +103,25 @@ class LogStash::Filters::KV < LogStash::Filters::Base
   #     filter { kv { target => "kv" } }
   config :target, :validate => :string, :default => '@fields'
 
+  #
+  # Force values of specified keys to be of type string.
+  # If you have a key whose value could be numeric in message1 and non-numeric in message2,
+  # you must use this option to force the key's value type to be a string.
+  #
+  # By default, numeric values will be treated as floats and non-numeric values as strings.
+  # You don't want a given key to have numeric and non-numeric values across messages.
+  #
+  # For example :
+  #  Say message1 is "a=120,b=20"
+  #  Say message2 is "a=12E,b=21"
+  #  Say message3 is "a=12F,b=23"
+  #
+  # You want value type of key "a" to be forced as string and not float. You must then specify the following filter :
+  #
+  #     filter { kv { value_string => [ "a" ] } }
+  #
+  config :value_string, :validate => :array, :default => []
+
   def register
     @trim_re = Regexp.new("[#{@trim}]") if !@trim.nil?
 
@@ -165,6 +184,7 @@ class LogStash::Filters::KV < LogStash::Filters::Base
       if !@trim.nil?
         value = value.gsub(@trim_re, "")
       end
+      value = (Float(value) rescue value) if ! @value_string.include? key
       key = @prefix + key
       kv_keys[key] = value
     end
